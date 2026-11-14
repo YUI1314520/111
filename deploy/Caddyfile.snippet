@@ -1,0 +1,6 @@
+# 把这段放进你已有站点块里（示例为 :80 或你的域名站点），
+# 面板本身监听 127.0.0.1:9200，对外通过 Caddy 反代，前缀 /drops/ 会被剥掉。
+redir /drops /drops/
+handle_path /drops/* {
+	reverse_proxy 127.0.0.1:9200
+}

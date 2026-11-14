@@ -1,0 +1,23 @@
+[Unit]
+Description=Twitch Drops automation panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/twitch-drops
+Environment=DROPS_HOST=127.0.0.1
+Environment=DROPS_PORT=9200
+Environment=DROPS_DATA_DIR=/var/lib/twitch-drops
+# 首次启动若未设置密码，会生成 $DROPS_DATA_DIR/INITIAL_PASSWORD.txt
+Environment=DROPS_PASSWORD=change-me
+ExecStart=/opt/twitch-drops/venv/bin/python -m app.main
+Restart=always
+RestartSec=5
+MemoryMax=900M
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

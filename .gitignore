@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行时数据（账号 token、数据库、日志）
+data/
+*.db
+*.db-wal
+*.db-shm
+*.log
+INITIAL_PASSWORD.txt
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

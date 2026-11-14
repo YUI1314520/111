@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e0e10">
+  <title>Twitch 掉宝助手</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 首次加载 / 连接失败 -->
+  <div id="boot-view" class="center-view">
+    <div class="boot-box">
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="boot-text" class="muted">正在连接服务器…</p>
+      <button id="boot-retry" class="btn btn-primary hidden" type="button">重试</button>
+    </div>
+  </div>
+
+  <!-- 登录页（/api/state 返回 401 时显示） -->
+  <div id="login-view" class="center-view hidden">
+    <form id="login-form" class="login-card" novalidate>
+      <div class="login-logo" aria-hidden="true">🎁</div>
+      <h1 class="login-title">Twitch 掉宝助手</h1>
+      <p class="muted login-sub">多账号掉宝自动化控制面板</p>
+      <label class="sr-only" for="password-input">密码</label>
+      <input id="password-input" class="input" type="password" name="password"
+             autocomplete="current-password" placeholder="请输入面板密码" required>
+      <button id="login-btn" class="btn btn-primary btn-block" type="submit">登录</button>
+      <p id="login-error" class="form-error" role="alert" hidden></p>
+    </form>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="app-view" class="hidden">
+    <header class="topbar">
+      <div class="wrap topbar-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">🎁</span>
+          <h1 class="brand-title">Twitch 掉宝助手</h1>
+        </div>
+        <div class="topbar-actions">
+          <span id="topbar-stats" class="topbar-stats">在线 0 · 挖宝 0</span>
+          <button id="logout-btn" class="btn btn-ghost btn-sm" type="button">退出</button>
+        </div>
+      </div>
+      <nav class="tabs wrap" role="tablist" aria-label="主导航">
+        <button id="tab-overview" class="tab is-active" role="tab" aria-selected="true"
+                aria-controls="view-overview" data-tab="overview" type="button">总览</button>
+        <button id="tab-campaigns" class="tab" role="tab" aria-selected="false"
+                aria-controls="view-campaigns" data-tab="campaigns" type="button">活动</button>
+        <button id="tab-logs" class="tab" role="tab" aria-selected="false"
+                aria-controls="view-logs" data-tab="logs" type="button">日志</button>
+        <button id="tab-settings" class="tab" role="tab" aria-selected="false"
+                aria-controls="view-settings" data-tab="settings" type="button">设置</button>
+      </nav>
+    </header>
+
+    <main class="wrap">
+      <!-- Tab 1：总览 -->
+      <section id="view-overview" class="view" role="tabpanel" aria-labelledby="tab-overview">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">账号</h2>
+            <p id="overview-sub" class="muted section-sub"></p>
+          </div>
+          <button id="add-account-btn" class="btn btn-primary" type="button">➕ 添加账号</button>
+        </div>
+        <div id="accounts-grid" class="grid"></div>
+      </section>
+
+      <!-- Tab 2：活动 -->
+      <section id="view-campaigns" class="view hidden" role="tabpanel" aria-labelledby="tab-campaigns">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">掉宝活动</h2>
+            <p id="campaigns-sub" class="muted section-sub"></p>
+          </div>
+        </div>
+        <div class="filters">
+          <label class="field">
+            <span>游戏</span>
+            <select id="campaign-game-filter" class="select"></select>
+          </label>
+          <div class="segmented" role="group" aria-label="活动范围">
+            <button id="scope-all" class="seg is-active" type="button" aria-pressed="true">全部</button>
+            <button id="scope-mine" class="seg" type="button" aria-pressed="false">只看我的游戏</button>
+          </div>
+        </div>
+        <div id="campaigns-list" class="grid"></div>
+      </section>
+
+      <!-- Tab 3：日志 -->
+      <section id="view-logs" class="view hidden" role="tabpanel" aria-labelledby="tab-logs">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">日志</h2>
+            <p id="logs-sub" class="muted section-sub">最近 200 条</p>
+          </div>
+          <button id="logs-refresh" class="btn btn-ghost btn-sm" type="button">刷新</button>
+        </div>
+        <div class="filters">
+          <label class="field">
+            <span>账号</span>
+            <select id="logs-account-filter" class="select">
+              <option value="">全部账号</option>
+            </select>
+          </label>
+          <label class="check">
+            <input id="logs-autoscroll" type="checkbox" checked>
+            自动滚动（最新在上）
+          </label>
+        </div>
+        <div id="log-list" class="log-list mono"></div>
+      </section>
+
+      <!-- Tab 4：设置 -->
+      <section id="view-settings" class="view hidden" role="tabpanel" aria-labelledby="tab-settings">
+        <div class="panel">
+          <h2 class="panel-title">默认游戏</h2>
+          <p class="muted small">点击下方游戏切换选中，也可以搜索添加；未选择时会扫描全部游戏。</p>
+
+          <h3 class="field-label">可选游戏</h3>
+          <div id="game-pool" class="game-pool"></div>
+
+          <h3 class="field-label">已选默认游戏（逗号分隔的 slug）</h3>
+          <div id="game-tags" class="tags"></div>
+          <p id="game-slug-line" class="mono muted slug-line"></p>
+
+          <div class="search-row">
+            <label class="sr-only" for="game-search">搜索游戏</label>
+            <input id="game-search" class="input" type="search" placeholder="搜索游戏，例如 apex"
+                   autocomplete="off" spellcheck="false">
+            <button id="game-search-btn" class="btn" type="button">搜索</button>
+          </div>
+          <div id="game-search-results" class="game-results"></div>
+
+          <button id="save-settings" class="btn btn-primary" type="button">保存设置</button>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">服务器信息</h2>
+          <dl id="server-info" class="kv"></dl>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 弹窗与 toast 挂载点 -->
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-wrap" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
